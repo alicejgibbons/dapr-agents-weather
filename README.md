@@ -11,135 +11,131 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Dapr Agents: A Framework for Agentic AI Systems
+# Durable Weather Agent
 
-![](./docs/img/dapr-agents-blue.png)
+A `DurableAgent` backed by the Dapr Workflow engine with a Chainlit chat UI. Every step of execution is persisted to durable storage, allowing long-running interactions to survive interruptions.
 
-[![PyPI - Version](https://img.shields.io/pypi/v/dapr-agents?style=flat&logo=pypi&logoColor=white&label=Latest%20version)](https://pypi.org/project/dapr-agents/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/dapr-agents?style=flat&logo=pypi&logoColor=white&label=Downloads)](https://pypi.org/project/dapr-agents/)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dapr/dapr-agents/.github%2Fworkflows%2Fbuild.yaml?branch=main&label=Build&logo=github)](https://github.com/dapr/dapr-agents/actions/workflows/build.yaml)
-[![GitHub License](https://img.shields.io/github/license/dapr/dapr-agents?style=flat&label=License&logo=github)](https://github.com/dapr/dapr-agents/blob/main/LICENSE)
-[![Discord](https://img.shields.io/discord/778680217417809931?label=Discord&style=flat&logo=discord)](http://bit.ly/dapr-discord)
-[![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCtpSQ9BLB_3EXdWAUQYwnRA?style=flat&label=YouTube%20views&logo=youtube)](https://youtube.com/@daprdev)
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/daprdev?logo=x&style=flat)](https://twitter.com/daprdev)
+The agent uses two MCP servers:
 
-Dapr Agents is a developer framework designed to build production-grade resilient AI agent systems that operate at scale. Built on top of the battle-tested Dapr project, it enables software developers to create AI agents that reason, act, and collaborate using Large Language Models (LLMs), while leveraging built-in observability and stateful workflow execution to guarantee agentic workflows complete successfully, no matter how complex.
+- **MongoDB MCP** — looks up city metadata (country, coordinates) from a local MongoDB database
+- **Open-Meteo MCP** — fetches real current weather using latitude/longitude from the Open-Meteo API (free, no API key required)
 
-![](./docs/img/dapr-agents-pubsub-workflow.png)
+For each request the agent first queries MongoDB to confirm the city exists and retrieve its coordinates, then passes those coordinates to the Open-Meteo weather tool, and returns a combined answer.
 
-## Key Features
+## Prerequisites
 
-- **Scale and Efficiency**: Run thousands of agents efficiently on a single core. Dapr distributes single and multi-agent apps transparently across fleets of machines and handles their lifecycle.
-- **Workflow Resilience**: Automatically retries agentic workflows and ensures task completion.
-- **Kubernetes-Native**: Easily deploy and manage agents in Kubernetes environments.
-- **Data-Driven Agents**: Directly integrate with databases, documents, and unstructured data by connecting to dozens of different data sources.
-- **Multi-Agent Systems**: Secure and observable by default, enabling collaboration between agents.
-- **Vendor-Neutral & Open Source**: Avoid vendor lock-in and gain flexibility across cloud and on-premises deployments.
-- **Platform-Ready**: Access scopes and declarative resources enable platform teams to integrate Dapr Agents into their systems.
+- Python >= 3.11 ([python.org](https://www.python.org/downloads/))
+- Node.js >= 20 ([nodejs.org](https://nodejs.org/)) — for the MongoDB MCP server
+- Docker ([docs.docker.com](https://docs.docker.com/get-docker/))
+- Dapr CLI ([docs.dapr.io](https://docs.dapr.io/getting-started/install-dapr-cli/))
+- uv package manager ([docs.astral.sh](https://docs.astral.sh/uv/getting-started/installation/))
+- Ollama ([ollama.com](https://ollama.com/)) **or** an OpenAI API key
 
+## Setup
 
-## Why Choose Dapr Agents?
+### 1. Install Python dependencies
 
-### Scalable Workflows as a First Class Citizen
+```bash
+uv venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+uv sync
+```
 
-Dapr Agents uses a [durable-execution workflow engine](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/) that guarantees each agent task executes to completion in the face of network interruptions, node crashes and other types of disruptive failures. Developers do not need to know about the underlying concepts of the workflow engine - simply write an agent that performs any number of tasks and these will get automatically distributed across the cluster. If any task fails, it will be retried and recover its state from where it left off.
-
-### Cost-Effective AI Adoption
-
-Dapr Agents builds on top of Dapr's Workflow API, which under the hood uses [actors](https://docs.dapr.io/developing-applications/building-blocks/actors/actors-overview/), a single unit of compute and state that is thread-safe and natively distributed, lending itself well to an agentic Scale-To-Zero architecture. This minimizes infrastructure costs, making AI adoption accessible to everyone. The underlying virtual actor model allows thousands of agents to run on demand on a single core machine with double-digit millisecond latency when scaling from zero. When unused, the agents are reclaimed by the system but retain their state until the next time they are needed. With this design, there's no trade-off between performance and resource efficiency.
-
-### Data-Centric AI Agents
-
-With built-in connectivity to over 50 enterprise data sources, Dapr Agents efficiently handles structured and unstructured data. From basic [PDF extraction](https://docs.dapr.io/developing-applications/dapr-agents/dapr-agents-integrations/#arxiv-fetcher) to large-scale database interactions, it enables seamless data-driven AI workflows with minimal code changes. Dapr's [bindings](https://docs.dapr.io/reference/components-reference/supported-bindings/) and [state stores](https://docs.dapr.io/reference/components-reference/supported-state-stores/) provide access to a large number of data sources that can be used to ingest data to an agent.
-
-### Accelerated Development
-
-Dapr Agents provides a set of AI features that give developers a complete API surface to tackle common problems. Some of these include:
-
-- Multi-agent communications
-- Structured outputs
-- Multiple LLM providers
-- Contextual memory
-- Flexible prompting
-- Intelligent tool selection
-- [MCP integration](https://docs.anthropic.com/en/docs/agents-and-tools/mcp).
-
-### Integrated Security and Reliability
-
-By building on top of Dapr, platform and infrastructure teams can apply Dapr's [resiliency policies](https://docs.dapr.io/operations/resiliency/resiliency-overview/) to the database and/or message broker of their choice that are used by Dapr Agents. These policies include timeouts, retry/backoffs and circuit breakers. When it comes to security, Dapr provides the option to scope access to a given database or message broker to one or more agentic app deployments. In addition, Dapr Agents uses mTLS to encrypt the communication layer of its underlying components.
-
-### Built-in Messaging and State Infrastructure
-
-* 🎯 **Service-to-Service Invocation**: Facilitates direct communication between agents with built-in service discovery, error handling, and distributed tracing. Agents can leverage this for synchronous messaging in multi-agent workflows.
-* ⚡️ **Publish and Subscribe**: Supports loosely coupled collaboration between agents through a shared message bus. This enables real-time, event-driven interactions critical for task distribution and coordination.
-* 🔄 **Durable Workflow**: Defines long-running, persistent workflows that combine deterministic processes with LLM-based decision-making. Dapr Agents uses this to orchestrate complex multi-step agentic workflows seamlessly.
-* 🧠 **State Management**: Provides a flexible key-value store for agents to retain context across interactions, ensuring continuity and adaptability during workflows.
-* 🤖 **Actors**: Implements the Virtual Actor pattern, allowing agents to operate as self-contained, stateful units that handle messages sequentially. This eliminates concurrency concerns and enhances scalability in agentic systems.
-
-### Vendor-Neutral and Open Source
-
-As a part of **CNCF**, Dapr Agents is vendor-neutral, eliminating concerns about lock-in, intellectual property risks, or proprietary restrictions. Organizations gain full flexibility and control over their AI applications using open-source software they can audit and contribute to.
-
-## Roadmap
-
-Check the [project view](https://github.com/orgs/dapr/projects/92) for some of the major features we're working on:
-
-For a complete list of issue (including bug fixes) please check out our [GitHub issues](https://github.com/dapr/dapr-agents/issues).
-
-### Language Support
-
-| Language | Current Status | Development Status | Stable Status    |
-|----------|--------|-------------|------------------|
-| Python   | In Development | Q2 2025 | expected Q4 2025 |
-| Other Languages | TBD | TBD | TBD              |
-
-## Documentation
-
-- [Documentation](https://docs.dapr.io/developing-ai/dapr-agents/)
-
-## Community
-
-### Contributing to Dapr Agents
-
-Please refer to our [Dapr Community Code of Conduct](https://github.com/dapr/community/blob/master/CODE-OF-CONDUCT.md)
-
-For development setup and guidelines, see our [Development Guide](docs/development/README.md).
-
-**Quick start for contributors:**
-1. Install dependencies: `uv sync --group dev --group test`
-2. Install pre-push hooks: `pre-commit install --hook-type pre-push`
-3. Make your changes and run tests: `uv run pytest tests -m "not integration"`
-4. Push your changes - hooks will run automatically
-
-## Getting Started
-
-Prerequisites:
-
-- [Dapr CLI](https://docs.dapr.io/getting-started/install-dapr-cli/)
-- [Python >=3.11](https://www.python.org/downloads/latest/python3.11/)
-- [uv](https://docs.astral.sh/uv/getting-started/installation/)
-
-### Install Dapr Agents
+### 2. Initialize Dapr
 
 ```bash
 dapr init
-uv init
-uv add dapr-agents
 ```
 
-### Run The Quickstarts
+### 3. Start MongoDB in Docker
 
-For a high level introduction to the fundamentals of Dapr Agents, see our [quickstarts](./quickstarts/README.md).
+```bash
+docker run -d \
+  --name mongodb \
+  -p 27017:27017 \
+  mongo:7
+```
 
-### Run The Examples
+Verify it is running:
 
-Once you've gotten a feel for the fundamentals of the project in the quickstarts, then dive deeper with the [examples](./examples/README.md).
+```bash
+docker ps | grep mongodb
+```
 
-## Get Involved
+### 4. Seed the city data
 
-Dapr Agents is an open-source project under the CNCF umbrella, and we welcome contributions from developers and organizations worldwide!
+```bash
+python seed_mongodb.py
+```
 
-- GitHub Repository: [https://github.com/dapr/dapr-agents](https://github.com/dapr/dapr-agents)
-- Documentation: [https://docs.dapr.io/developing-applications/dapr-agents/](https://docs.dapr.io/developing-applications/dapr-agents/)
-- Community Discord: [Join the discussion](https://bit.ly/dapr-discord).
-- Contribute: Open an issue or submit a PR to help improve Dapr Agents!
+This script inserts 9 cities (London, New York, Tokyo, Paris, Sydney, São Paulo, Cairo, Mumbai, Seattle) into a `weatherdb.cities` collection. Re-running the script is safe — it drops and recreates the collection each time.
+
+### 5. Start the MongoDB MCP server
+
+The MongoDB MCP server connects to your local MongoDB instance and exposes its tools via streamable HTTP on `http://localhost:3000/mcp`.
+
+```bash
+MDB_MCP_CONNECTION_STRING="mongodb://localhost:27017/weatherdb" \
+  npx -y mongodb-mcp-server@latest --transport http --httpHost 127.0.0.1 --httpPort 3000
+```
+
+Leave this running in a dedicated terminal.
+
+### 6. Install the Open-Meteo MCP server
+
+Launch a new terminal. The Open-Meteo MCP server is launched automatically by the agent via `npx` when it starts. Pre-install it to avoid the download delay at startup:
+
+```bash
+npx -y -p open-meteo-mcp-server open-meteo-mcp-server --help
+```
+
+### 7. Configure your LLM provider
+
+Set your OPENAI_API_KEY in terminal which will be picked up by the `resources/llm-provider.yaml` component:
+
+```
+export OPENAI_API_KEY=""
+```
+
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: llm-provider
+spec:
+  type: conversation.openai
+  version: v1
+  metadata:
+    - name: key
+      envRef: OPENAI_API_KEY
+    - name: model
+      value: "gpt-4o-mini"
+```
+
+## Run
+
+In a new terminal:
+
+```bash
+uv run dapr run --app-id durable-agent --resources-path resources -- chainlit run app.py
+```
+
+Then open [http://localhost:8000](http://localhost:8000) in your browser and start chatting.
+
+## Expected Behavior
+
+1. The agent queries MongoDB to look up the city (e.g. London → United Kingdom, 51.51°N, 0.13°W).
+2. The agent passes the coordinates to the Open-Meteo weather tool and retrieves the current temperature.
+3. The agent returns a combined answer with the city name, country, coordinates, and current weather.
+
+## Troubleshooting
+
+- **MongoDB not reachable**: Ensure `docker ps` shows the `mongodb` container running on port 27017
+- **MongoDB MCP not reachable**: Ensure the `npx mongodb-mcp-server` process is running and listening on port 3000
+- **City not found**: Only the 8 seeded cities are in the database. Re-run `seed_mongodb.py` if needed
+- **Open-Meteo MCP slow to start**: The first run downloads the package via npx. Pre-install it with the command in step 6
+- **Ollama not responding**: Ensure `ollama serve` is running and the model is pulled (`ollama pull qwen3:0.6b`)
+- **Environment variables**: Verify `OLLAMA_ENDPOINT` and `OLLAMA_MODEL` are exported (or `OPENAI_API_KEY` if using OpenAI)
+- **Import errors**: Verify that `uv sync` completed successfully
+- **Python version**: Ensure you are using Python >= 3.11

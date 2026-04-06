@@ -1,0 +1,73 @@
+/* Dapr Agents Weather Assistant — Dapr blue/white theme */
+
+:root {
+  --dapr-blue:       #0052CC;
+  --dapr-blue-dark:  #003E9C;
+  --dapr-blue-light: #E8F0FC;
+  --dapr-white:      #FFFFFF;
+}
+
+/* ── Header / watermark ── */
+#cl-root .watermark {
+  display: none;
+}
+
+/* ── Primary buttons ── */
+button[data-variant="contained"],
+button[class*="primary"] {
+  background-color: var(--dapr-blue) !important;
+  border-color: var(--dapr-blue) !important;
+  color: var(--dapr-white) !important;
+}
+
+button[data-variant="contained"]:hover,
+button[class*="primary"]:hover {
+  background-color: var(--dapr-blue-dark) !important;
+  border-color: var(--dapr-blue-dark) !important;
+}
+
+/* ── Send button ── */
+button[data-testid="send-button"],
+button[aria-label="send message"] {
+  background-color: var(--dapr-blue) !important;
+  color: var(--dapr-white) !important;
+}
+
+button[data-testid="send-button"]:hover,
+button[aria-label="send message"]:hover {
+  background-color: var(--dapr-blue-dark) !important;
+}
+
+/* ── Assistant message bubbles ── */
+[data-testid="assistant-message"] .message-content,
+[class*="assistantMessage"] {
+  border-left: 3px solid var(--dapr-blue) !important;
+  background-color: var(--dapr-blue-light) !important;
+}
+
+/* ── Sidebar / header background ── */
+header,
+[class*="sidebar"] {
+  background-color: var(--dapr-blue) !important;
+  color: var(--dapr-white) !important;
+}
+
+header *,
+[class*="sidebar"] * {
+  color: var(--dapr-white) !important;
+}
+
+
+/* ── Links ── */
+a {
+  color: var(--dapr-blue) !important;
+}
+
+a:hover {
+  color: var(--dapr-blue-dark) !important;
+}
+
+/* ── Focus rings ── */
+*:focus-visible {
+  outline-color: var(--dapr-blue) !important;
+}
